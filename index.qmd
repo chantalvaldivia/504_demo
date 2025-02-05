@@ -1,5 +1,5 @@
 ---
-title: "This is my demo"
+title: "This is my demo afte I uplodaed to github to make sure it works"
 listing:
   contents: posts
   sort: "date desc"
