@@ -10,3 +10,7 @@ listing:
 page-layout: full
 title-block-banner: true
 ---
+
+Now I am trying to talk a little bit here and I'd like to insert an image
+
+![](images/lamby.png)
