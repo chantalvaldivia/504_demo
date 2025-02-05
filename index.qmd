@@ -1,5 +1,6 @@
 ---
 title: "This is my demo afte I uplodaed to github to make sure it works"
+output-dir: docs
 listing:
   contents: posts
   sort: "date desc"

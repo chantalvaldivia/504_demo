@@ -1,6 +1,6 @@
 ---
 title: "About"
-image: profile.jpg
+image: gorp_upset.png
 about:
   template: jolla
   links:
