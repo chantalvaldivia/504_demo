@@ -157,7 +157,9 @@ ggplot(mass_polviews_long, aes(x = opinion, y = proportion, fill = factor(polvie
 > Make a plot displaying the relationship between satisfaction with mass transportation spending and political views. Use the plot to describe the relationship the two variables.
 
 ```{r}
-#________
+# 
+ggplot(data, aes(x = polviews, y = natmass)) +
+  geom_bar(stat = "identity")
 ```
 
 The more conservative one's political views are the more they think the amount of spending on mass transportation is correct.
@@ -169,14 +171,14 @@ The more conservative one's political views are the more they think the amount o
 ```{r}
 
 data <- data %>%
-  mutate(age = if_else(age == ______), 
+  mutate(age = if_else(age == "89 or older", "89", "age"), 
          age = as.numeric(age))
 ```
 
 > Plot the frequency distribution of age.
 
 ```{r}
-
+ggplot (data,aes(age, colour = , fill)
 ```
 
 ## Logistic regression
@@ -185,8 +187,9 @@ data <- data %>%
 
 ```{r}
 intercept_only_model <- glm(
-  ________________
-  ) 
+  data = data,
+  family = binomial(link = "logit"),
+  binary ~ 1)
 
 intercept_only_model %>% 
   tidy() %>%
