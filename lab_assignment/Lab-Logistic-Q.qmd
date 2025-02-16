@@ -29,6 +29,12 @@ engine: knitr
 
     -   I want the assignments to begin reflecting a bit more of how you'd be doing things on your own, where you have some prior knowledge and you figure other things out (by referring to documentation, etc.) . In addition to the rmd, I also want you to submit to me **notes** of anything new that you learn while finishing the assignment. And any pain-points, and we'll discuss more.
 
+        -   In general I struggled with this assignment due to the length and just being unclear on some of the points (like what a question was asking) but otherwise I liked this new format of assignment where there were chances to verify your work and repeat some of the same skills.
+
+        -   I like anything where we build with ggplot
+
+        -   Maybe some more hints throughout could be helpful?
+
 -   Note:
 
     -   If you are fitting a model, display the model output in a neatly formatted table. (The `gt` `tidy` and `kable` functions can help!). `Modelsummary` also looks good(https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html)
@@ -232,7 +238,8 @@ Interpretation: About 53% with a 95% CI of 0.51 to 0.55 of people support the po
 
 ```{r}
 #make sure that sex is a factor (i.e. to make sure R knows it's binary/categorical, and not continuous)
-data$sex_clean <- as.factor(data$sex)
+data <- data %>% 
+  mutate(sex_clean = as.factor(sex))
 
 #fit with glm()
 m1 <- glm(
@@ -256,7 +263,7 @@ m1 %>%
   tidy(exponentiate = TRUE) %>%
   kable()
 
-bsex <- coef(m1)["sexMale"]
+bsex <- coef(m1)["sexFemale"]
 
 ci_lower_lo = bsex - 1.96 * 0.0798020
 ci_upper_lo = bsex + 1.96 * 0.0798020
@@ -274,7 +281,7 @@ The predicted probability for females to be satisfied with spending on mass tran
 \
 Verify this.
 
-**I think I was able to verify the results of the probability, but the log-odds seem to be inverse for me?**
+**I think I was able to verify the results of the probability, but the log-odds seem to be inverse for me but the numbers are still correct**
 
 > Next, consider the relationship between age and one’s opinion about spending on mass transportation. Interpret the coefficient of age in terms of the logs odds and OR of being satisfied with spending on mass transportation. Please include the 95% CIs around each estimate.
 
@@ -282,24 +289,37 @@ Verify this.
 
 bage <- coef(m1)["age"]
 
-ci_lower_lo_age = bage - 1.96 * 0.0798020
-ci_upper_lo_age = bage + 1.96 * 0.0798020
+ci_lower_lo_age = bage - 1.96 * 0.002282412	
+ci_upper_lo_age = bage + 1.96 * 0.002282412	
 
-ci_lower_or_age = 1.29 - 1.96 * 0.0798020
-ci_upper_or_age = 1.29 + 1.96 * 0.0798020
+# odds ratio
+or_age <- exp(bage)
+
+ci_lower_or_age = 1.29 - 1.96 * 0.002282412	
+ci_upper_or_age = 1.29 + 1.96 * 0.002282412	
 
 emm_age <- emmeans(m1, "age", type = "response")
 
 ```
 
-A one unit increase in age is associated with a decrease in the log-odds of being satisfied with spending on mass transportation by .006, holding all other variables constant. The odds ratio is \_\_\_\_\_ which confirms the \_\_\_\_ relationship implied by the log-odds coefficient. Specifically, for each additional unit of age, the odds of being satisfied with mass transportation spending decrease by a factor of about \_\_\_, or approximately \_\_\_ per unit increase in age, holding other factors constant.
+A one unit increase in age is associated with a decrease in the log-odds of being satisfied with spending on mass transportation by .006, holding all other variables constant. The odds ratio is 0.994 which confirms the negative relationship implied by the log-odds coefficient. Specifically, for each additional unit of age, the odds of being satisfied with mass transportation spending decrease by a factor of about 0.994, or approximately .006 per unit increase in age, holding other factors constant. (I am not confident in these results)
 
 > Consider the relationship between SES and one’s opinion about spending on mass transportation. Interpret the coefficient of SES in terms of the logs odds and OR of being satisfied with spending on mass transportation. Please include the 95% CIs around each estimate. ß
 
 ```{r}
-bses <- coef(m1)__
+bses <- coef(m1)["sei10"]
 
-_____
+ses_se <- summary(m1)$coefficients["sei10", "Std. Error"]
+ci_lower_lo_bses = bses - 1.96 * 0.0016609	
+ci_upper_lo_bses = bses + 1.96 * 0.0016609	
+
+# odds ratio
+or_ses <- exp(bses)
+
+ci_lower_or_bses = 1.29 - 1.96 * 0.0016609	
+ci_upper_or_bses = 1.29 + 1.96 * 0.0016609	
+
+emm_ses <- emmeans(m1, "sei10", type = "response")
 
 ```
 
@@ -315,13 +335,15 @@ A one unit increase in SES index is associated with a decrease in the log-odds o
 avg_comparisons(m1, comparison = "difference") %>% 
   kable()
 
+avg_slopes(m1) %>%
+  kable()
 ```
 
--   The marginal effect of age is \_\_\_ (95% CI \[\_\_\_, \_\_\_\]). So, for each additional unit increase of age, the probability of being satisfied with mass transportation spending decreases by approximately \_\_ percentage points, holding other factors constant (p = \_\_\_).
+-   The marginal effect of age is -0.0015153 (95% CI \[-0.0026088, -0.0004219\]). So, for each additional unit increase of age, the probability of being satisfied with mass transportation spending decreases by approximately 0.15 percentage points, holding other factors constant (p = 0.0066050).
 
--   The marginal effect of SES is \_\_\_ (95% CI \[\_\_\_, \_\_\_\_\]). For each one-unit increase in the socioeconomic index, the probability of being satisfied with mass transportation spending decreases by approximately \_\_ percentage points, holding other variables constant.
+-   The marginal effect of SES is 0.0015304 (95% CI \[-0.0023219, -0.0007388\]). For each one-unit increase in the socioeconomic index, the probability of being satisfied with mass transportation spending decreases by approximately 0.15 percentage points, holding other variables constant.
 
--   The marginal effect for being female compared to male is \_\_\_ (95% CI \[\_\_, \_\_\_\]). This indicates that females are, on average, about \_\_\_ percentage points more likely than males to be satisfied with mass transportation spending, holding other factors constant.
+-   The marginal effect for being female compared to male is 0.0630688 (95% CI \[-0.1015743, -0.0245632\]). This indicates that females are, on average, about 6.31 percentage points more likely than males to be satisfied with mass transportation spending, holding other factors constant.
 
 ## Model comparison
 
@@ -341,7 +363,7 @@ test_likelihoodratio(fit2, fit3) %>% kable()
 
 > Is the model with polviews better than the model without?
 
--   Yes.
+-   Yes (LRT show p\<.001)
 
 ## Visualization
 
@@ -351,11 +373,11 @@ test_likelihoodratio(fit2, fit3) %>% kable()
 
     -   Given the code below, interpet what is being plotted:
 
-        -   pol_plot : \_\_\_\_
+        -   pol_plot : support for mass transit spending is highest for extreme conervatives
 
-        -   sex_plot : \_\_\_\_
+        -   sex_plot : women more likely to support more spending
 
-        -   ses_plot: \_\_\_
+        -   ses_plot: lower SES also predicts more spending support
 
     ::: callout-tip
     -   adjust the various settings in your plot to make it look professional.
@@ -400,6 +422,7 @@ sex_plot <- ggplot(pp_sex, aes(x = x, y = predicted, color = x)) +
        x = "Sex", y = "Predicted Probability",
        color = "Sex") +
   theme_minimal()
+sex_plot
 
 pp_sex
 
@@ -426,7 +449,7 @@ binned_residuals(fit2)
 ```
 
 ::: callout-note
-Answer: \_\_\_\_\_\_
+Answer: Doesn't seem like it because the warning says that we're only at 86% of the residuals being inside the error bounds and we should be closer to 95%
 :::
 
 ## Model fit
@@ -439,7 +462,7 @@ r2_mcfadden(fit2)
 
 ```
 
-> R2 interpretation: \_\_\_\_
+> R2 interpretation: This model accounts for .01% of the data which is not great
 >
 > Next, Take a look at the binned residual plots for each continuous predictor variable and look at linearity. Is there a predictor that sticks out? What can we do to improve model fit in this case?
 
@@ -454,7 +477,7 @@ binned_residuals(fit2, term="age") %>% plot(show_dots=TRUE)
 
 ::: callout-note
 -   ::: callout-note
-    \_\_\_\_\_
+    Age is a better predictor than SEI, given that age has less residuals outside of bound than sei10 does? Also nonlinear trend here could indicate transformations are required.
     :::
 :::
 
@@ -464,19 +487,22 @@ binned_residuals(fit2, term="age") %>% plot(show_dots=TRUE)
 emmeans(fit3, "polviews") %>% pairs() %>% as.data.frame() %>% filter(p.value < .05)
 
 emmeans(fit3, "polviews", type="response") %>% pairs() %>% as.data.frame() %>% filter(p.value < .05)
+
 ```
 
--   Conservatives are \_\_ times more likely to support mass transit spending compared to extremely liberal and liberal
+-   Conservatives are .37 times more likely to support mass transit spending compared to extremely liberal and liberal
 
--   Extreme liberals are \_\_\_ times more likely to support spending compared to conservatives, moderates and slight conservatives
+-   Extreme liberals are .42 times more likely to support spending compared to conservatives, moderates and slight conservatives
 
--   Extrm conservatives are \_\_ times more likely to support mass spending than liberals and slight liberals
+-   Extrm conservatives are .48 times more likely to support mass spending than liberals and slight liberals
 
--   Liberals are \_\_ times more likely to support spending than moderates and slight conservatives.
+-   Liberals are .49 times more likely to support spending than moderates and slight conservatives.
+
+(I am not confident about these results above)
 
 ## Conclusion
 
-\_\_\_ based on the model summary below, and the three figures.
+Political views are the best predictor of mass transportation spending opinions, given the large reduction in deviance. Age and sex perform almost equally, but sei10 is not all that helpful
 
 ```{r model-summary, results='asis', echo=FALSE , fig.cap="Table 1"}
 
