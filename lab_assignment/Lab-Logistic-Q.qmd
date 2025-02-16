@@ -64,6 +64,7 @@ The data are in gss2016.csv in the data folder.
 > Let’s begin by making a binary variable for respondents’ views on spending on mass transportation. Create a new variable that is equal to “1” if a respondent said spending on mass transportation is about right and “0” otherwise. Then plot the proportion of the response variable, using informative labels for each category.
 
 ```{r}
+# loading required packages
 if (!require("dplyr")) {install.packages("dplyr"); require("dplyr")}
 if (!require("ggplot2")) {install.packages("ggplot2"); require("ggplot2")}
 if (!require("readr")) {install.packages("readr"); require("readr")}
@@ -80,14 +81,14 @@ if (!require("modelsummary")) {install.packages("modelsummary"); require("models
 ```
 
 ```{r}
-data <- read_csv("gss2016.csv")
+data <- read.csv("gss2016.csv")
 ```
 
 Fill in the "\_\_\_\_" below to encode the binary variable
 
 ```{r}
 data <- data %>%
-   mutate(mass_trans_spend_right = (natmass == "About right"))
+   mutate(mass_trans_spend_right = if_else(natmass == "About right", 1, 0))
 ```
 
 ```{r}
@@ -105,9 +106,14 @@ mass_spend_long$mass_trans_spend_right <- as.factor(mass_spend_long$mass_trans_s
 
 #Make plot
 #Hint: geom_bar lets you make stacked bar charts
-ggplot(mass_spend_long, aes(x = opinion, y = proportion, fill = factor(mass_trans_spend_right))) +
-  geom_bar(stat = "identity")
-
+ggplot(mass_spend_long, aes(x = opinion, y = proportion, fill = mass_trans_spend_right)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("#fee8c8","#fdbb84"),
+    labels = c("Not right", "About right")) + 
+  labs(title = "Propotion of responses on mass transportation item",
+       x = "Opinion",
+       y = "Proportion",
+       fill = "Opinion")
 ```
 
 > Recode `polviews` so it is a factor with levels that are in an order that is consistent with question on the survey. Note how the categories are spelled in the data.
@@ -116,13 +122,9 @@ ggplot(mass_spend_long, aes(x = opinion, y = proportion, fill = factor(mass_tran
 
 data <- data %>%
   mutate(polviews = factor(polviews,
-                           levels = c("Extrmly conservative", 
-                                    "Conservative",
-                                    "Slightly conservative",
-                                    "Moderate",
-                                    "Slightly liberal",
-                                    "Liberal",
-                                    "Slghtly conservative"),
+                           levels = c("Extremely liberal", "Liberal", "Slightly liberal", 
+                                      "Moderate", "Slghtly conservative", "Conservative", 
+                                      "Extrmly conservative"),
                            ordered = TRUE))
 ```
 
@@ -132,21 +134,19 @@ data <- data %>%
 #Get proportions, format, and produce a plot like you did previously for mass_trans_spend_right
 
 #Get proportions
-mass_polviews_summary <- data %>%
+pol_view_summary <- data %>%
   count(polviews) %>%
   mutate(proportion = n / sum(n))
 
-#Look at the dataframe structure. And make sure it's in a format that you can use for plotting.
-#Change structure if needed
-mass_polviews_long <- pivot_longer(mass_polviews_summary, names_to = "opinion", values_to = "proportion", cols = proportion)
-
-#Factorise for plot
-mass_polviews_long$polviews <- as.factor(mass_polviews_long$polviews)
-
 #Make plot
 #Hint: geom_bar lets you make stacked bar charts
-ggplot(mass_polviews_long, aes(x = opinion, y = proportion, fill = factor(polviews))) +
-  geom_bar(stat = "identity")
+ggplot(pol_view_summary, aes(x = polviews, y = proportion, fill = polviews)) +
+  geom_bar(stat = "identity") + 
+    scale_fill_manual(values = c("#fef0d9","#fdd49e", "#fdbb84", "#fc8d59","#e34a33", "#d7301f", "#990000")) +
+    labs(title = "Proportion of responses on mass transportation item",
+    x = "Political views",
+    y = "Proportion",
+    fill = "Political view")
   
 ```
 
@@ -158,8 +158,7 @@ ggplot(mass_polviews_long, aes(x = opinion, y = proportion, fill = factor(polvie
 
 ```{r}
 # 
-ggplot(data, aes(x = polviews, y = natmass)) +
-  geom_bar(stat = "identity")
+
 ```
 
 The more conservative one's political views are the more they think the amount of spending on mass transportation is correct.
@@ -170,9 +169,8 @@ The more conservative one's political views are the more they think the amount o
 
 ```{r}
 
-data <- data %>%
-  mutate(age = if_else(age == "89 or older", "89", "age"), 
-         age = as.numeric(age))
+data = data %>%
+  mutate(age = if_else(age == "89 or older", "89", age))
 ```
 
 > Plot the frequency distribution of age.
@@ -189,11 +187,10 @@ ggplot (data,aes(age, colour = , fill)
 intercept_only_model <- glm(
   data = data,
   family = binomial(link = "logit"),
-  binary ~ 1)
+  mass_trans_spend_right ~ 1)
 
 intercept_only_model %>% 
-  tidy() %>%
-  kable()
+  tidy()
 
 ```
 
