@@ -157,8 +157,15 @@ ggplot(pol_view_summary, aes(x = polviews, y = proportion, fill = polviews)) +
 > Make a plot displaying the relationship between satisfaction with mass transportation spending and political views. Use the plot to describe the relationship the two variables.
 
 ```{r}
-# 
-
+data %>%
+  group_by(polviews) %>%
+  summarize(prop_satisfied = mean(mass_trans_spend_right), na.rn = T) %>% 
+  ggplot(aes(x = polviews, y = prop_satisfied, fill = polviews)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Proportion of responses on mass transportation item",
+       x = "Political views",
+       y = "Proportion satisfied with spending",
+       fill = "Opinions") 
 ```
 
 The more conservative one's political views are the more they think the amount of spending on mass transportation is correct.
@@ -170,13 +177,19 @@ The more conservative one's political views are the more they think the amount o
 ```{r}
 
 data = data %>%
-  mutate(age = if_else(age == "89 or older", "89", age))
+  dplyr::mutate(age = if_else(age == "89 or older", "89", age)) %>%
+  dplyr::mutate(age = as.numeric(age))
 ```
 
 > Plot the frequency distribution of age.
 
 ```{r}
-ggplot (data,aes(age, colour = , fill)
+data |> 
+  ggplot(aes(x = age)) + 
+  geom_density(binwidth = 5, fill = "orange") + 
+  labs(title = "Frequency distribution of age",
+       x = "age",
+       y = "frequency")
 ```
 
 ## Logistic regression
@@ -185,9 +198,9 @@ ggplot (data,aes(age, colour = , fill)
 
 ```{r}
 intercept_only_model <- glm(
+  mass_trans_spend_right ~ 1,
   data = data,
-  family = binomial(link = "logit"),
-  mass_trans_spend_right ~ 1)
+  family = binomial(link = "logit"))
 
 intercept_only_model %>% 
   tidy()
@@ -197,7 +210,7 @@ intercept_only_model %>%
 > Interpret the intercept in the context of the data. You can do this by converting the $\beta_0$ parameter out of the log-odds metric to the probability metric. Make sure to include the 95% confidence intervals. Then interpret the results in a sentence or two--what is the basic thing this probability tells us about?
 
 ```{r}
-b0 <- _____ # get coef
+b0 <- coef(intercept_only_model) # get coef
 
 b0_transformed <- exp(b0) / (1 + exp(b0)) # logistic transform
 
@@ -205,24 +218,31 @@ ci_lower = b0 - 1.96 * 0.0393685
 ci_upper = b0 + 1.96 * 0.0393685
 
 #transforming confidence intervals of coefficients into probabilities
-p_lower = ________
-p_upper = ________
+p_lower = exp(ci_lower)/(1+exp(ci_lower))
+p_upper = exp(ci_upper)/(1+exp(ci_upper))
 
+b0_transformed
+p_lower
+p_upper 
 ```
 
-Interpretation: \_\_\_\_
+Interpretation: About 53% with a 95% CI of 0.51 to 0.55 of people support the policy
 
 > Now let's fit a model using the demographic factors - `age`,`sex`, `sei10` - to predict the odds a person is satisfied with spending on mass transportation. Make any necessary adjustments to the variables so the intercept will have a meaningful interpretation. *Neatly display the model coefficients (do not display the summary output)*
 
 ```{r}
 #make sure that sex is a factor (i.e. to make sure R knows it's binary/categorical, and not continuous)
-____
+data$sex_clean <- as.factor(data$sex)
 
 #fit with glm()
-___
+m1 <- glm(
+  mass_trans_spend_right ~  age + sex + sei10,
+  data = data,
+  family = binomial(link = "logit"))
 
 #produce tidy output of model coefficients
-___
+m1 %>%
+  tidy()
 ```
 
 > Consider the relationship between sex and one’s opinion about spending on mass transportation. Interpret the coefficient of sex in terms of the logs odds and OR of being satisfied with spending on mass transportation. What are the predicted probabilities for males and females on support for spending on mass transportation? Please include the 95% CIs around each estimate.
@@ -236,7 +256,7 @@ m1 %>%
   tidy(exponentiate = TRUE) %>%
   kable()
 
-bsex <- coef(m1)["sexFemale"]
+bsex <- coef(m1)["sexMale"]
 
 ci_lower_lo = bsex - 1.96 * 0.0798020
 ci_upper_lo = bsex + 1.96 * 0.0798020
@@ -254,18 +274,25 @@ The predicted probability for females to be satisfied with spending on mass tran
 \
 Verify this.
 
+**I think I was able to verify the results of the probability, but the log-odds seem to be inverse for me?**
+
 > Next, consider the relationship between age and one’s opinion about spending on mass transportation. Interpret the coefficient of age in terms of the logs odds and OR of being satisfied with spending on mass transportation. Please include the 95% CIs around each estimate.
 
 ```{r}
 
-bage <- coef___
+bage <- coef(m1)["age"]
 
-_____
+ci_lower_lo_age = bage - 1.96 * 0.0798020
+ci_upper_lo_age = bage + 1.96 * 0.0798020
 
+ci_lower_or_age = 1.29 - 1.96 * 0.0798020
+ci_upper_or_age = 1.29 + 1.96 * 0.0798020
+
+emm_age <- emmeans(m1, "age", type = "response")
 
 ```
 
-A one unit increase in age is associated with a decrease in the log-odds of being satisfied with spending on mass transportation by \_\_\_\_\_\_, holding all other variables constant. The odds ratio is \_\_\_\_\_ which confirms the \_\_\_\_ relationship implied by the log-odds coefficient. Specifically, for each additional unit of age, the odds of being satisfied with mass transportation spending decrease by a factor of about \_\_\_, or approximately \_\_\_ per unit increase in age, holding other factors constant.
+A one unit increase in age is associated with a decrease in the log-odds of being satisfied with spending on mass transportation by .006, holding all other variables constant. The odds ratio is \_\_\_\_\_ which confirms the \_\_\_\_ relationship implied by the log-odds coefficient. Specifically, for each additional unit of age, the odds of being satisfied with mass transportation spending decrease by a factor of about \_\_\_, or approximately \_\_\_ per unit increase in age, holding other factors constant.
 
 > Consider the relationship between SES and one’s opinion about spending on mass transportation. Interpret the coefficient of SES in terms of the logs odds and OR of being satisfied with spending on mass transportation. Please include the 95% CIs around each estimate. ß
 
@@ -304,12 +331,11 @@ avg_comparisons(m1, comparison = "difference") %>%
 
 ```{r}
 
-fit2 <- ___
+fit2 <- glm(mass_trans_spend_right~age + sex +sei10, data = data, family = binomial(link="logit"))
 
-fit3 <- ___
+fit3 <- glm(mass_trans_spend_right ~ polviews + age + sex + sei10, data = data, family = binomial(link = "logit"))
 
 test_likelihoodratio(fit2, fit3) %>% kable()
-
 
 ```
 
